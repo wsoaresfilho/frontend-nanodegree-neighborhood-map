@@ -1,3 +1,8 @@
+// Global variables
+var map;
+var markers = [];
+var infowindows = [];
+
 // Object containing all the data for the restaurants
 var data = [
     {
@@ -41,12 +46,10 @@ var data = [
 // The Place Model
 var Place = function(data, index) {
     this.name = ko.observable(data.name);
-    this.id = ko.observable(data.id);
-    this.img = ko.observable(data.img);
-    this.latitude = ko.observable(data.latitude);
-    this.longitude = ko.observable(data.longitude);
-    this.content = ko.observable(data.content);
-    this.index = ko.observable(index);
+    this.id = data.id;
+    this.latitude = data.latitude;
+    this.longitude = data.longitude;
+    this.index = index;
     this.visible = ko.observable(true);
     this.highlight = ko.observable(false);
 };
@@ -56,7 +59,7 @@ var ViewModel = function() {
     var self = this;
 
     self.side = ko.observable(false); // Controls the sidebar animation
-    self.filter = ko.observable(""); // The filter input
+    self.filter = ko.observable(''); // The filter input
     self.placeList = ko.observableArray([]); // A list with all the places
 
     // Open or close the sidebar
@@ -109,11 +112,7 @@ var ViewModel = function() {
     };
 
 };
-
 var vm = new ViewModel();
-var map;
-var markers = [];
-var infowindows = [];
 
 // Show an alert if the gmaps API has an error
 function noMapsAPI() {
@@ -197,6 +196,7 @@ function initMap() {
     });
 
     var bounds = new google.maps.LatLngBounds();
+    var infowindow = new google.maps.InfoWindow();
     var pinImage = {
         url: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
         size: new google.maps.Size(40, 37),
@@ -208,7 +208,7 @@ function initMap() {
         var place = vm.placeList()[i];
 
         var marker = new google.maps.Marker({
-            position: {lat: place.latitude(), lng: place.longitude()},
+            position: {lat: place.latitude, lng: place.longitude},
             map: map,
             animation: google.maps.Animation.DROP,
             title: place.name(),
@@ -219,7 +219,6 @@ function initMap() {
         place.marker = marker;
         markers.push(marker);
 
-        var infowindow = new google.maps.InfoWindow();
         infowindows.push(infowindow);
 
         marker.addListener('click', (function(m, info, p) {
@@ -245,6 +244,9 @@ function initMap() {
     }
 
     map.fitBounds(bounds); // Use all the markers to define the bounds for the map
+    google.maps.event.addDomListener(window, 'resize', function() {
+        map.fitBounds(bounds); // `bounds` is a `LatLngBounds` object
+    });
 }
 
 function stopAnimations() {
@@ -257,7 +259,7 @@ function stopAnimations() {
 
 // Simulate a click on a marker when clicking on a list item
 function selectMarker(place) {
-    google.maps.event.trigger(markers[place.index()], 'click');
+    google.maps.event.trigger(markers[place.index], 'click');
 }
 
 // Gets infos for the infowindows using the "Foursquare API"
@@ -267,7 +269,7 @@ function getPlaceInfos(marker, place, infowin) {
     var title,address,phone;
 
     var settings = {
-        url: url_preffix + place.id() + url_suffix,
+        url: url_preffix + place.id + url_suffix,
         dataType: 'json',
         success: function(result) {
             var resp = result.response.venue;
